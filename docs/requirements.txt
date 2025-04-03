@@ -1,5 +1,2 @@
 # Required for Read the Docs theme
 sphinx-rtd-theme
-
-# Required for math equations
-sphinx-mathjax
