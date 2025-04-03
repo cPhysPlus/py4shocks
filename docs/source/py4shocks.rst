@@ -1,4 +1,4 @@
-Your Module
+The py4shocks Module
 ===========
 
 .. automodule:: py4shocks
@@ -6,7 +6,7 @@ Your Module
    :undoc-members:
    :show-inheritance:
 
-Submodule 1
+Test Module
 -----------
 
 .. automodule:: py4shocks.test_module

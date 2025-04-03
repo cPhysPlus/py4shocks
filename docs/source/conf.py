@@ -19,7 +19,8 @@ extensions = [
 templates_path = ['_templates']
 exclude_patterns = ['_build']
 
-html_theme = 'sphinx_rtd_theme' # Good for RTD
+# HTML for ReadTheDocs
+html_theme = 'sphinx_rtd_theme'
 
 # Add print statements to check the python path
 print("Python Path:")
