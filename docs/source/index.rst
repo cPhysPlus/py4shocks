@@ -7,6 +7,12 @@ Welcome to py4shocks!
    :maxdepth: 2
 
    py4shocks
+   installation
+   annotated_example
+   frequently_asked_questions
+   api_reference
+   citation
+   contact
 
 Indices and tables
 ==================
