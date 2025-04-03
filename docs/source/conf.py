@@ -1,12 +1,13 @@
+# Import librariea
 import os
 import sys
 
-# If your extensions live in 'your_module', put its path here.
+# Path for extensions
 sys.path.insert(0, os.path.abspath('../..'))
 
-project = 'Your Project Name'
-copyright = '2024, Your Name'
-author = 'Your Name'
+project = 'py4shocks'
+copyright = '2025, Yachay Tech University'
+author = 'B. Pinargote, W. E. Banda-Barragan, S. Navarrete, F. Teutloff'
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -24,10 +25,3 @@ html_theme = 'sphinx_rtd_theme' # Good for RTD
 print("Python Path:")
 for path in sys.path:
     print(path)
-
-#Try to import the sphinx_rtd_theme
-try:
-    import sphinx_rtd_theme
-    print("sphinx_rtd_theme imported successfully")
-except ImportError:
-    print("sphinx_rtd_theme import failed")
