@@ -1,8 +1,6 @@
+.. py4shocks documentation...
 
-.. Your Project Name documentation master file, created by
-   sphinx-quickstart on ...
-
-Welcome to Your Project Name's documentation!
+Welcome to py4shocks!
 ============================================
 
 .. toctree::
