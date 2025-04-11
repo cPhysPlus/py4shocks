@@ -1,4 +1,4 @@
-# utils.py
+# thermo_fluid_utils.py
 # modified by: Bryan J. Pinargote (bryanpinargote2000@gmail.com)
 # mar. 2025
 
