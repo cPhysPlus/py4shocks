@@ -1,0 +1,20 @@
+---
+route_vtk_folder: /path/to/PLUTO/Test_Problems/folder
+
+calculate_shock_cell:
+    activated: True
+    output_vtr_shocks_folder: /path/to/VTRs/output/folder
+    prefix_name_file: HD_shock
+
+constants:
+    gamma: 1.67  # Adiabatic index
+    mu: 0.6      # Mean molecular weight
+
+tracking_shocks:
+    activated: True
+    output_tracking_dir: /path/to/CSV/output/folder
+    name_tracking_output: shock_track
+    threshold_tracer: 0.95
+    threshold_rho: 1.8
+    threshold_mach: 3.0
+...
