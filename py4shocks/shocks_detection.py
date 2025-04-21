@@ -7,7 +7,7 @@
 # Import required libraries
 import os
 import yaml
-import utils
+import thermo_fluid_utils
 import argparse
 import numpy as np
 from pyevtk.hl import gridToVTK
@@ -193,17 +193,17 @@ class ShocksCalculations:
         tr1_3D = sim_object.read_variable("tr1")
         
         # Calculate sound speed.
-        c_so_3D = utils.sound_speed(self.gamma, prs_3D_cgs, rho_3D_cgs)
+        c_so_3D = thermo_fluid_utils.sound_speed(self.gamma, prs_3D_cgs, rho_3D_cgs)
         
         # Find minimum sound speed in each direction.
         csx, csy, csz = self.min_c(c_so_3D)
         
         # Calculate velocity divergence and apply threshold.
-        div = utils.diver_vel(vx1_3D_cgs, vx2_3D_cgs, vx3_3D_cgs, self.dxx, self.dyy, self.dzz)
+        div = thermo_fluid_utils.diver_vel(vx1_3D_cgs, vx2_3D_cgs, vx3_3D_cgs, self.dxx, self.dyy, self.dzz)
         div_tresh = np.where(div[3] >= 0., 0., 1.)
         
         # Calculate pressure gradient modulus and apply threshold.
-        mdl_prs_gra = utils.pression_gradient_modulus(prs_3D_cgs, self.dzz)
+        mdl_prs_gra = thermo_fluid_utils.pression_gradient_modulus(prs_3D_cgs, self.dzz)
         mdl_prs_gra_tresh = np.where(mdl_prs_gra > 0.1, 1., 0.)
         
         # Apply threshold for tracer variable.
