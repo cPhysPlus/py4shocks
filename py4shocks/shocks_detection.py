@@ -14,7 +14,8 @@ from pyevtk.hl import gridToVTK
 from scipy.signal import find_peaks
 from mesh_operations import MeshOperations
 from read_simulation import SimulationReader
-
+import pyvista as pv
+from scipy import ndimage
 ##############################################################################################################
 
 class ShocksCalculations:
@@ -109,6 +110,40 @@ class ShocksCalculations:
         
         return m
 
+    ### Alfvenic mach number
+    def mach_alfven_formula(self, Bx, By, Bz, rho, c_min, mach_number):
+        """
+        Calculate the Mach number using the Rankine-Hugoniot jump conditions that accounts for velocity gradients and specific heat capacity ratio.
+        Inputs: v_gr (numpy.ndarray): Velocity gradient array
+                c (numpy.ndarray): Local sound speed array
+                step (float): Grid spacing (dx, dy, or dz depending on direction)
+                gamma (float): Adiabatic index of the gas
+        Outputs: m (numpy.ndarray): Array of calculated Mach numbers
+        """
+        v_A_m = np.sqrt(Bx**2 + By**2 + Bz**2) / ( np.sqrt( rho) + 1e-12)
+        m_alfven = c_min * mach_number / (v_A_m + 1e-14)
+        
+        return m_alfven
+
+    ### pre_shock values
+    def rho_pointer(self, prs,idx, field):
+        vec = self.vec
+        dx, dy, dz = vec
+        dprs_dz, dprs_dy, dprs_dx = np.gradient(prs, dz, dy, dx)
+        dpx = dprs_dx[idx]; dpy = dprs_dy[idx]; dpz = dprs_dz[idx]
+        mod_m = np.sqrt(dpx**2 + dpy**2 + dpz**2) + 1e-12
+        nxn = dpx / mod_m; nyn = dpy / mod_m; nzn = dpz / mod_m
+        dl_eff = 1.0 / (np.sqrt((nxn/dx)**2 + (nyn/dy)**2 + (nzn/dz)**2) + 1e-12)
+        ell_m = 2.0 * dl_eff
+        zz, yy, xx = idx
+        coordinates = np.stack([zz - ell_m * nzn / dz,
+                        yy - ell_m * nyn / dy,
+                        xx - ell_m * nxn / dx])
+
+        return ndimage.map_coordinates(field, coordinates, order=1, mode='nearest')
+
+
+
 
     def findpeaks(self, vec, Mx, My, Mz):
         """
@@ -147,7 +182,7 @@ class ShocksCalculations:
         return A, B, C  # Return binary arrays indicating peak locations
 
 
-    def save_vtr(self, mach_all, mach_clo, i=0):
+    def save_vtr(self, mach_all, mach_clo, mach_alf, i=0):
         """
         Save Mach number data to a VTR file.
         Inputs: mach_all (numpy.ndarray): 3D array of Mach numbers for all shocks.
@@ -172,7 +207,8 @@ class ShocksCalculations:
         # - Save mach number arrays as cell data, converting to float32 and transposing
         gridToVTK(self.prefix_name_file + ".0{:03d}".format(i), self.xx, self.yy, self.zz, 
                   cellData={"mach_all": np.float64(mach_all.T), 
-                           "mach_clo": np.float64(mach_clo.T)}) # It can be change to float 64 for more pressision
+                           "mach_clo": np.float64(mach_clo.T),
+                           "mach_alf": np.float64(mach_alf.T)}) # It can be change to float 64 for more pressision
 
 
     def shocks_detection(self, i=0):
@@ -190,6 +226,12 @@ class ShocksCalculations:
         vx1_3D_cgs = sim_object.read_variable("vx1")
         vx2_3D_cgs = sim_object.read_variable("vx2")
         vx3_3D_cgs = sim_object.read_variable("vx3")
+
+        ## mod: B field
+        Bx_3D_cgs = sim_object.read_variable("Bx1")
+        By_3D_cgs = sim_object.read_variable("Bx2")  
+        Bz_3D_cgs = sim_object.read_variable("Bx3")
+
         tr1_3D = sim_object.read_variable("tr1")
         
         # Calculate sound speed.
@@ -232,12 +274,25 @@ class ShocksCalculations:
         Mz *= Mz1
         Ma = np.sqrt(Mx**2 + My**2 + Mz**2) # Calculate the total Mach number.
         
+        
         # Apply thresholds to Mach numbers.
         Mtot = Ma * tagtot
+
+        idx = np.nonzero(Mtot)  
+        bx_pre = self.rho_pointer(prs_3D_cgs, idx, Bx_3D_cgs)
+        by_pre = self.rho_pointer(prs_3D_cgs, idx, By_3D_cgs)
+        bz_pre = self.rho_pointer(prs_3D_cgs, idx, Bz_3D_cgs)
+        rho_pre = self.rho_pointer(prs_3D_cgs, idx, rho_3D_cgs)
+        cs_pre = self.rho_pointer(prs_3D_cgs, idx, c_so_3D)
+
+        m_alf_vals = self.mach_alfven_formula(bx_pre, by_pre, bz_pre, rho_pre, cs_pre, Ma[idx])
+
+        m_alf = np.zeros_like(Ma)
+        m_alf[idx] = m_alf_vals
+
         Mclo = Ma * tagclo
-        
-        return Mtot, Mclo
-    
+        M_alf_tot = m_alf
+        return Mtot, Mclo, M_alf_tot
 ##############################################################################################################
 
 if __name__ == "__main__":
@@ -273,5 +328,5 @@ if __name__ == "__main__":
     # Process each time step in the simulation.
     for i in range (len(readunits.read_time_steps()[1])):
         print(f"File {i} was saved.")
-        Mtot, Mclo = shock_detect.shocks_detection(i)
-        shock_detect.save_vtr(Mtot, Mclo, i)
+        Mtot, Mclo, M_alf_tot = shock_detect.shocks_detection(i)
+        shock_detect.save_vtr(Mtot, Mclo, M_alf_tot, i)
