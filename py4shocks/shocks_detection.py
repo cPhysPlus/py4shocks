@@ -16,6 +16,7 @@ from mesh_operations import MeshOperations
 from read_simulation import SimulationReader
 import pyvista as pv
 from scipy import ndimage
+from mpi4py import MPI
 ##############################################################################################################
 
 class ShocksCalculations:
@@ -296,6 +297,9 @@ class ShocksCalculations:
 ##############################################################################################################
 
 if __name__ == "__main__":
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
 
     parser = argparse.ArgumentParser()
 
@@ -303,7 +307,6 @@ if __name__ == "__main__":
     parser.add_argument('--output_vtr_shocks_folder', type=str, required=False, help="Directory name to save the VTR file.")
     parser.add_argument('--prefix_name_file', type=str, required=False, help="Base name for the VTR file.")
     parser.add_argument('--gamma', type=float, required=False, help="Isotropic index")
-
     args = parser.parse_args()
     
     # Use configuration from a YAML file if no command-line arguments are provided
@@ -324,9 +327,10 @@ if __name__ == "__main__":
         # Use command-line arguments if provided.
         readunits = SimulationReader(args.input_route_vtk_folder)
         shock_detect = ShocksCalculations(args.input_route_vtk_folder, args.output_vtr_shocks_folder, args.prefix_name_file, args.gamma)
-    
+    time = len(readunits.read_time_steps()[1])
+    indices = np.array_split(range(1,time),size)[rank]
     # Process each time step in the simulation.
-    for i in range (len(readunits.read_time_steps()[1])):
+    for i in indices:
         print(f"File {i} was saved.")
         Mtot, Mclo, M_alf_tot = shock_detect.shocks_detection(i)
         shock_detect.save_vtr(Mtot, Mclo, M_alf_tot, i)
